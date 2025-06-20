@@ -1,0 +1,36 @@
+// SPDX-License-Identifier: GPL-3.0
+pragma solidity ^0.8.26;
+
+// 仅通过 IR 编译
+contract Coin {
+    // 关键字 "public" 使变量可从其他合约访问
+    address public minter;
+    mapping(address => uint) public balances;
+
+    // 事件允许客户端对你声明的特定合约更改做出反应
+    event Sent(address from, address to, uint amount);
+
+    // 构造函数代码仅在合约被创建时运行
+    constructor() {
+        minter = msg.sender;
+    }
+
+    // 向地址发送一定数量的新创建的币
+    // 只能由合约创建者调用
+    function mint(address receiver, uint amount) public {
+        require(msg.sender == minter);
+        balances[receiver] += amount;
+    }
+
+    // 错误允许你提供有关操作失败的原因的信息。
+    // 它们被返回给函数的调用者。
+    error InsufficientBalance(uint requested, uint available);
+
+    // 从任何调用者向地址发送一定数量的现有币
+    function send(address receiver, uint amount) public {
+        require(amount <= balances[msg.sender], InsufficientBalance(amount, balances[msg.sender]));
+        balances[msg.sender] -= amount;
+        balances[receiver] += amount;
+        emit Sent(msg.sender, receiver, amount);
+    }
+}
