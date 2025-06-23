@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: SEE LICENSE IN LICENSE
-pragma solidity  ^0.8.20;
+pragma solidity ^0.8;
 
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
@@ -89,8 +89,8 @@ contract NftAuction is Initializable, UUPSUpgradeable {
         require(_startPrice > 0, "Start price must be greater than 0");
 
         // 转移NFT到合约
-        IERC721(_nftAddress).approve(address(this), _tokenId);
-        // IERC721(_nftAddress).safeTransferFrom(msg.sender, address(this), _tokenId);
+        // IERC721(_nftAddress).approve(address(this), _tokenId);
+        IERC721(_nftAddress).safeTransferFrom(msg.sender, address(this), _tokenId);
 
         auctions[nextAuctionId] = Auction({
             seller: msg.sender,
@@ -142,7 +142,6 @@ contract NftAuction is Initializable, UUPSUpgradeable {
             payValue = amount * uint(getChainlinkDataFeedLatestAnswer(address(0)));
         }
         
-
         uint startPriceValue = auction.startPrice *
             uint(getChainlinkDataFeedLatestAnswer(auction.tokenAddress));
 
@@ -155,17 +154,24 @@ contract NftAuction is Initializable, UUPSUpgradeable {
         );
 
         // 转移 ERC20 到合约
-        IERC20(_tokenAddress).transferFrom(msg.sender, address(this), amount);
-        if (auction.tokenAddress == address(0)) {
-            // auction.tokenAddress = _tokenAddress;
-            payable(auction.highestBidder).transfer(auction.highestBid);
-        } else {
-            // 退回之前的ERC20
-            IERC20(auction.tokenAddress).transfer(
-                auction.highestBidder,
-                auction.highestBid
-            );
+        if (_tokenAddress != address(0)) {
+            IERC20(_tokenAddress).transferFrom(msg.sender, address(this), amount);
         }
+
+        // 退还前最高价
+        if (auction.highestBid > 0) {
+            if (auction.tokenAddress == address(0)) {
+                // auction.tokenAddress = _tokenAddress;
+                payable(auction.highestBidder).transfer(auction.highestBid);
+            } else {
+                // 退回之前的ERC20
+                IERC20(auction.tokenAddress).transfer(
+                    auction.highestBidder,
+                    auction.highestBid
+                );
+            }
+        }
+        
         auction.tokenAddress = _tokenAddress;
         auction.highestBid = amount;
         auction.highestBidder = msg.sender;
@@ -175,12 +181,6 @@ contract NftAuction is Initializable, UUPSUpgradeable {
     function endAuction(uint256 _auctionID) external {
         Auction storage auction = auctions[_auctionID];
 
-        // console.log(
-        //     "endAuction",
-        //     auction.startTime,
-        //     auction.duration,
-        //     block.timestamp
-        // );
         // 判断当前拍卖是否结束
         require(
             !auction.ended &&
@@ -189,7 +189,7 @@ contract NftAuction is Initializable, UUPSUpgradeable {
         );
         // 转移NFT到最高出价者
         IERC721(auction.nftContract).safeTransferFrom(
-            admin,
+            address(this),
             auction.highestBidder,
             auction.tokenId
         );
@@ -198,11 +198,17 @@ contract NftAuction is Initializable, UUPSUpgradeable {
         auction.ended = true;
     }
 
-    function _authorizeUpgrade(
-        address newImplementation
-    ) internal view override {
+    function _authorizeUpgrade(address) internal view override {
         // 只有管理员可以升级合约
-        require(newImplementation != address(0x0), "newImplementation");
         require(msg.sender == admin, "Only admin can upgrade");
     }
+
+    // function onERC721Received(
+    //     address operator,
+    //     address from,
+    //     uint256 tokenId,
+    //     bytes calldata data
+    // ) external pure returns (bytes4) {
+    //     return this.onERC721Received.selector;
+    // }
 }
