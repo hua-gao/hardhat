@@ -22,7 +22,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
   const implAddress = await upgrades.erc1967.getImplementationAddress(proxyAddress)
   console.log("实现合约地址：", implAddress);
   
-  const storePath = path.resolve(__dirname, "./.cache/proxyNftAuction.json");
+  const storePath = path.resolve(__dirname, "../cache/proxyNftAuction.json");
 
   
   fs.writeFileSync(

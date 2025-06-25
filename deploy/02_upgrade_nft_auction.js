@@ -8,7 +8,7 @@ module.exports = async function ({ getNamedAccounts, deployments }) {
   console.log("部署用户地址：", deployer)
 
   // 读取 .cache/proxyNftAuction.json文件
-  const storePath = path.resolve(__dirname, "./.cache/proxyNftAuction.json");
+  const storePath = path.resolve(__dirname, "../cache/proxyNftAuction.json");
   const storeData = fs.readFileSync(storePath, "utf-8");
   const { proxyAddress, implAddress, abi } = JSON.parse(storeData);
 
