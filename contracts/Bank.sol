@@ -44,5 +44,17 @@ contract  Bank {
 
         balance = balance - amount;
     }
+
+     event Received(address sender, uint amount);
+
+    receive() external payable {
+       emit Received(msg.sender, msg.value);
+    }
+
+    event ReceivedFB(address sender, uint amount);
+    
+    fallback() external payable {
+        emit ReceivedFB(msg.sender, msg.value);
+    }
 }
 
