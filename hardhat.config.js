@@ -30,5 +30,9 @@ module.exports = {
   },
   sourcify: {
     enabled: true
-  }
+  },
+  paths: {
+    sources: "./contracts",
+    ignore: ["**/CrossChain/**"],
+  },
 };
